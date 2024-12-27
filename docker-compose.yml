@@ -1,0 +1,41 @@
+version: "3.9"  # 指定 Docker Compose 的版本，這裡使用 3.9
+
+services:
+  # 定義應用服務（Apache + PHP）
+  app:
+    image: php:8.2-apache  # 使用 PHP 8.2 版本與 Apache 作為 Web 伺服器
+    container_name: my-app  # 指定容器的名稱，方便識別
+    networks:
+      - DockerTest  # 連接到名為 DockerTest 的網絡
+    ports:
+      - "8080:80"  # 將容器的 80 端口映射到本地的 8080 端口，這樣可以通過 http://localhost:8080 訪問網站
+    volumes:
+      - ./code:/var/www/html/  # 將本地的 code 目錄映射到容器中的 /var/www/html 目錄
+    environment:
+      - APACHE_DOCUMENT_ROOT=/var/www/html/ci4/public  # 設定 Apache 的網站根目錄，這裡是 CI4 框架的 public 目錄
+    depends_on:
+      - db  # 在啟動 app 容器之前，先啟動 db 容器
+
+  # 定義資料庫服務（MySQL）
+  db:
+    image: mysql:5.7  # 使用 MySQL 5.7 版本的官方鏡像
+    container_name: my-db  # 指定容器名稱為 my-db
+    networks:
+      - DockerTest  # 連接到名為 DockerTest 的網絡
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword  # 設定 MySQL 的 root 密碼
+      MYSQL_DATABASE: my-db  # 創建一個名為  my-db 的資料庫
+    volumes:
+      - db_data:/var/lib/mysql  # 使用 Docker 卷來保存 MySQL 數據，確保數據不會在容器重啟後丟失
+    ports:
+      - "3306:3306"  # 將容器的 MySQL 端口 3306 映射到本地端口 3306，這樣可以在本地連接到 MySQL
+
+# 定義 Docker 網絡，讓容器之間可以相互通信
+networks:
+  DockerTest:
+    driver: bridge  # 使用 bridge 模式來創建網絡，容器在此網絡中可以互相通信
+
+# 定義持久化存儲的卷，保證資料庫數據不會丟失
+volumes:
+  db_data:
+    driver: local  # 使用本地驅動來創建數據卷
